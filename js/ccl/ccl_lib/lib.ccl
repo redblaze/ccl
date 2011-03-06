@@ -1,0 +1,59 @@
+map = function(l, f) {
+  res = list();
+  foreach(l as v) {
+    push(res, f(v))
+  };
+  res
+};
+
+fix = function(f) {
+  __fix__ = {"f": 1};
+  __fix__.f = function() {
+    jsApply(__args__, "unshift", __fix__);
+    a <- apply(f, __args__)
+  };
+  __fix__.f
+};
+
+fact = fix(function(self, x) {
+  self = self.f;
+  switch {
+    x  == 0 => 1 |
+    1 => self(x - 1) * x
+  }
+});
+
+filter = function(l, b) {
+  res = list();
+  foreach(l as v) {
+    switch {
+      b(v) => push(res, v) |
+      1 => 0
+    }
+  };
+  res
+};
+
+reduce = foldr = function(l, n, c) {
+  foreach(l as v) {
+    n = c(v, n)
+  };
+  n
+};
+
+plus = function(x, y) {
+  x + y
+};
+
+sum = function(l) {
+  reduce(l, 0, plus)
+};
+
+for_n = function(n, f) {
+  i = 0;
+  while (i < n) {
+    f(i); i = i + 1
+  }
+};
+
+

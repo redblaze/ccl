@@ -1,0 +1,222 @@
+        
+/~
+ccl grammar
+~/
+
+[*
+
+var flattern = function(ss, tag) {
+  if (ss[0] != tag) {
+    return [ss];
+  }
+  var res = [];
+  for (var i = 0; i < ss[1].length; i++) {
+    res = res.concat(flattern(ss[1][i], tag));
+  }
+  return res;
+};
+
+var toSeq = function(e) {
+  if (e[0] == 'seq') {
+    return e;
+  } else {
+    return ['seq', [e]];
+  }
+};
+
+var toStmts = function(es) {
+  if (es.length == 1) {
+    return es[0];       
+  } else {
+    return ['seq', es];
+  }
+};
+
+*]
+
+/~
+    --- These are the token definitions --- 
+~/
+
+!       ' |\r|\n|\t|//[^\n]*\n'
+
+        '\|'
+        '@'
+        'function'  Function
+        ','
+        '\$'  Dollar
+        '=>'
+        ':'
+        'switch'  Switch
+        'while'  While
+        'for'  For
+        'foreach'  Foreach
+        'as'  As
+        'let' Let
+        'in' In
+        '\?'
+        '{'
+        '}'
+        '!'
+        '[A-Za-z_][A-Za-z0-9_]*'  Identifier
+        '"([^"\\]|\\"|\\\\)*"'  String  [* 
+          %match = %match.substr( 1, %match.length - 2 );
+        *]
+        '([0-9]+|[0-9]+\.[0-9]+)'  Number  [* %match = parseFloat( %match ); *]
+        ;
+
+<       ';'
+        ;
+        
+>       '='
+        '<-'
+        ;
+
+<       '\|\|\|'
+        '\|\|\|\|'
+        ;
+
+<       '\|\|'
+        ;
+
+<       '&&'
+        ;
+
+<       '=='
+        '!='
+        '<'
+        '<='
+        '>'
+        '>='
+        ;
+
+<       '~'
+        ;
+
+<       '\+'            /~ Left-associative tokens, lowest precedence ~/
+        '\-'
+        ;
+    
+<       '\*'            /~ Left-associative tokens, highest precedence ~/
+        '/'
+        ;
+
+<       '\.'  Dot
+        ;
+<       '\['
+        '\]'
+        ;
+<       '(\\)'  BackSlash
+        ;
+>       '`'
+        '\^'  Escape
+        '#'  Hash
+        ;
+<       '\('
+        '\)'
+        ;
+
+##
+
+/~
+    --- And here's the grammar specification ---
+~/
+
+p:    e  [* console.log(%1); alert( %1 ); *]
+    ;
+
+/~
+    Don't confuse with the tokens:
+    Here, we use the unescaped values because these are not
+    interpretered as regular expressions at this position!
+~/
+e:     e '+' e  [* %% = ['fun_app', ['lvar', '+'], [%1, %3]]; *]
+       | e '-' e  [* %% = ['fun_app', ['lvar', '-'], [%1, %3]]; *]
+       | e '*' e  [* %% = ['fun_app', ['lvar', %2], [%1, %3]]; *]
+       | e '/' e  [* %% = ['fun_app', ['lvar', '/'], [%1, %3]]; *]
+       | '-' e  &'*' [* %% = ['fun_app', ['lvar', '-'], [['const', 0], %2]]; *]
+       | '(' e ')'  [* %% = ['paren', %2]; *]
+       | e '==' e  [* %% = ['fun_app', ['lvar', '=='], [%1, %3]]; *]
+       | e '!=' e  [* %% = ['fun_app', ['lvar', '!='], [%1, %3]]; *]
+       | e '>' e  [* %% = ['fun_app', ['lvar', '>'], [%1, %3]]; *]
+       | e '>=' e  [* %% = ['fun_app', ['lvar', '>='], [%1, %3]]; *]
+       | e '<' e  [* %% = ['fun_app', ['lvar', '<'], [%1, %3]]; *]
+       | e '<=' e  [* %% = ['fun_app', ['lvar', '<='], [%1, %3]]; *]
+       | e '&&' e [* %% = ['land', %1, %3]; *]
+       | e '||' e [* %% = ['lor', %1, %3]; *]
+       | '!' e  &'&&' [* %% = ['fun_app', ['lvar', 'not'], [%2]]; *]
+       | Number  [* %% = ['const', %1]; *]
+       | String  [* %% = ['const', %1]; *]
+       | LExp [* %% = %1; *]
+       | LExp '=' e  [* %% = ['assign', %1, %3]; *]
+       | LExp '<-' e  [* %% = ['assign_fork', %1, %3]; *]
+       | '<-' e  [* %% = ['fork', %2]; *]
+       /~ | e ';' e [* %% = ['seq', flattern(['seq', [%1, %3]], 'seq')]; *] ~/
+       | stmts [* %% = toStmts(%1); *]
+       | e '|||' e [* %% = ['or', flattern(['or', [%1, %3]], 'or')]; *]
+       | e '||||' e [* %% = ['por', flattern(['por', [%1, %3]], 'por')]; *]
+       | '`' e  [* %% = ['code', %2]; *]
+       | Escape e  [* %% = ['escape', %2]; *]
+       | Hash e  [* %% = ['decode', %2]; *]
+       | Function '(' ')' '{' e '}'  [* %% = ['lambda', [], %5] *]
+       | Function '(' fargs ')' '{' e '}'  [* %% = ['lambda', %3, %6] *]
+       | e '(' ')'  [* %% = ['fun_app', %1, []]; *]
+       | e '(' args ')'  [* %% = ['fun_app', %1, %3]; *]
+       /~
+       | Switch '{' cases '}'  [* %% = ['switch', %3]; *]
+       | While '(' e ')' '{' e '}' [* %% = ['while', %3, toSeq(%6)]; *]
+       | Foreach '(' e As Identifier ')' '{' e '}' [* %% = ['foreach', %3, %5, toSeq(%8)]; *]
+       ~/
+       | e '~' e  [* %% = ['fun_app', ['lvar', '~'], [%1, %3]]; *]
+       | '{' mappings '}'  [* %% = ['obj', %2]; *]
+       | '{' '}'  [* %% = ['obj', []]; *]
+       | Let ImpVar '=' e In e  [* %% = ['let', %2, %4, %6]; *]
+       | ImpVar  [* %% = ['imp_var', %1]; *]
+       ;
+
+stmts:  stmts stmt  [* %% = %1.concat([%2]); *]
+        | stmt  [* %% = [%1]; *]
+        ;
+
+stmt:  e ';'  [* %% = %1; *]
+       | Switch '{' cases '}'  [* %% = ['switch', %3]; *]
+       | While '(' e ')' '{' e '}' [* %% = ['while', %3, %6]; *]
+       | Foreach '(' e As Identifier ')' '{' e '}' [* %% = ['foreach', %3, %5, %8]; *]
+       | Foreach '(' e As Identifier ':' Identifier ')' '{' e '}' [* %% = ['obj_foreach', %3, %5, %7, %10]; *]
+       ;
+
+cases:  cases '|' case  [* %% = %1.concat([%3]); *]
+        | case  [* %% = [%1]; *]
+        ;
+
+case:  e '=>' e  [* %% = [%1, %3]; *]
+       ;
+
+mappings:  mappings ',' mapping  [* %% = %1.concat([%3]); *]
+           | mapping  [* %% = [%1]; *]
+           ;
+
+mapping:  e ':' e  [* %% = [%1, %3]; *]
+          ;
+
+field:  Identifier  [* %% = %1; *]
+        | Dollar  [* %% = "$"; *]
+        | '@' Identifier  [* %% = "@" + %2; *]
+        | Number  [* %% = %1; *]
+        ;
+
+args:  args ',' e  [* %% = %1.concat([%3]); *]
+       | e  [* %% = [%1]; *]
+       ;
+
+fargs:  fargs ',' Identifier  [* %% = %1.concat([%3]); *]
+        | Identifier  [* %% = [%1]; *]
+        ;
+
+LExp:  Identifier  [* %% = ['lvar', %1]; *]
+       | e '[' e ']'  [* %% = ['sub', %1, %3]; *]
+       | e Dot field  [* %% = ['dot', %1, %3]; *]
+       ;
+
+ImpVar: '?' Identifier  [* %% = %2; *]
+        ;
