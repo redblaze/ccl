@@ -11,9 +11,9 @@ var IdStateContErrEnvMonad = function() {
         bind: function(m, f) {
             return superclass.prototype.bind.call(this, m, function(a) {
 			    return function(e) {return function(k) {return function(s) {
-				    // return tail(function() {
+				    return tail(function() {
 					    return f(a)(e)(k)(s);
-				    // });
+				    });
 			    };};};
             });
         },

@@ -33,7 +33,7 @@ var Monad = function() {
                         });
                     });
                 } else {
-                    return me.unit([])
+                    return me.unit([]);
                 }
             };
             

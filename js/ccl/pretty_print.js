@@ -69,6 +69,7 @@ ccl.PrettyPrint = function() {
 		case 'imp_var': return ppImpVar(expr[1]);
         case 'if': return ppIf(expr[1], expr[2], expr[3]);
         case 'try': return ppTry(expr[1], expr[2], expr[3]);
+        case 'list': return ppList(expr[1]);
       	default: throw 'unrecognized statement in pp: ' + expr;
 		}
 	};
@@ -115,7 +116,15 @@ ccl.PrettyPrint = function() {
 		popOut();
 		outln(')');
 	};
-	
+
+	var isStmt = function(e) {
+        return e[0] == 'switch' ||
+            e[0] == 'while' ||
+            e[0] == 'foreach' ||
+            e[0] == 'if' ||
+            e[0] == 'try';
+    };
+
 	var ppSeq = function(es) {
 		var useParen = ctxt.length > 1 && ctxt[ctxt.length - 2] == 'fun_app';
 		if (useParen) {
@@ -128,9 +137,9 @@ ccl.PrettyPrint = function() {
 				outln('');
 			}
 			ppExpr(es[i]);
-			// if (i < es.length - 1) {
-				out(';');
-			// }
+            if (!isStmt(es[i])) {
+			    out(';');
+            }
 		}
 		if (useParen) {
 			popOut();
@@ -410,6 +419,17 @@ ccl.PrettyPrint = function() {
         ppExpr(e2);
         popOut(); outln();
         out('}');
+    };
+
+    var ppList = function(es) {
+        out('[');
+        for (var i = 0; i < es.length; i++) {
+            if (i > 0) {
+                out(', ');
+            }
+            ppExpr(es[i])
+        }
+        out(']');
     };
 	
 	var ppExpr = function(expr) {

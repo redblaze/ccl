@@ -81,6 +81,8 @@ ccl.Interpreter = function() {
                 return this.interpIf(expr[1], expr[2], expr[3]);
             case 'try':
                 return this.interpTry(expr[1], expr[2], expr[3]);
+            case 'list':
+                return this.interpList(expr[1]);
             default:
                 return this.monad.fail('unrecognized statement in interpExpr: ' + pp(expr));
             }
@@ -364,6 +366,10 @@ ccl.Interpreter = function() {
                             return monad.unit(['try', e1, expr[2], e2]);
                         });
                     });
+                case 'list':
+                    return monad.bind(monad.sequence(_map(expr[1])), function(es) {
+                        return monad.unit(['list', es]);
+                    });
                 default:
                     return monad.fail('unrecognized statement in interpCode: ' + pp(expr));
                 }
@@ -555,6 +561,18 @@ ccl.Interpreter = function() {
             return monad.or(me.interpExpr(e1), monad.bind(m, function() {
                 return me.interpExpr(e2);
             }));
+        },
+
+        interpList: function(es) {
+            var me = this;
+            var monad = this.monad;
+            
+            var ms = [];
+            for (var i = 0; i < es.length; i++) {
+                ms.push(me.interpExpr(es[i]));
+            }
+
+            return monad.sequence(ms);
         },
 
         interpFunApp: function(fun, args) {
