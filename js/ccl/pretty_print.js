@@ -1,7 +1,6 @@
 
-jawa.namespace(jawa, 'ccl');
 
-jawa.ccl.PrettyPrint = function() {
+ccl.PrettyPrint = function() {
 	var depth = 0;
 	var res = [];
 	var ctxt = [];

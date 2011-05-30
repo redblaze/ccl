@@ -1,11 +1,6 @@
-jawa.namespace(jawa, 'ccl');
 
-// jawa.ccl.Primitives = newClass({template: function(cls) {
-jawa.ccl.Primitives = function() {
-    var cls = {};
-
-    var bind = jawa.cps.bind;
-    var unit = jawa.cps.unit;
+ccl.Primitives = function() {
+    eval(Shortcut);
 
     var cps2fun = function(cps) {
         return function(cont, abort) {
@@ -22,12 +17,16 @@ jawa.ccl.Primitives = function() {
             };
         };
     };
+
     var toFun = function(f) {
         return function() {
             var cps = f.apply(this, arguments);
             return cps2fun(cps);
         };
     };
+
+    var cls = {};
+
     cls.sync = {
         '+': function(a, b) {
             return a + b;
@@ -147,7 +146,7 @@ jawa.ccl.Primitives = function() {
                 var me = args.shift();
                 var fnName = args.shift();
                 var fn;
-                if (jawa.lang.isString(fnName)) {
+                if (typeof fnName === 'string') {
                     fn = me[fnName];
                 }
                 return fn.apply(me, args);
@@ -255,8 +254,8 @@ jawa.ccl.Primitives = function() {
         'cps': cps2fun,
 
         'timeout': toFun( function(time) {
-            return jawa.cps.bind(jawa.timer.sleep(time), function() {
-                return jawa.cps.unit();
+            return bind(jawa.timer.sleep(time), function() {
+                return unit();
             });
         }),
         /*

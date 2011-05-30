@@ -1,4 +1,67 @@
+var ErrT = function(base) {
+    var cls = function() {
+    }
+    
+    var sup = base.prototype;
+    
+    Util.subclass(cls, base, {
+        // unit :: a -> M (Maybe a)
+        unit: function(a) {
+            return sup.unit.call(this, ['just', a]);
+        },
+        
+        // bind :: M (Maybe a) -> (a -> M (Maybe b)) -> M (Maybe b)
+        bind: function(m, k) {
+            var me = this;
+            
+            return sup.bind.call(me, m, function(a) {
+                switch(a[0]) {
+                    case 'just': return k(a[1]);
+                    case 'nothing': return sup.unit.call(me, ['nothing', a[1]]);
+                    default: throw 'undefined tag in error monad:' + a[0];
+                }
+            });
+        },
+        
+        // fail :: M (Maybe a)
+        fail: function(e) {
+            return sup.unit.call(this, ['nothing', e]);
+        }
+    });
+    
+    (function() {
+        // lift :: M a -> M (Maybe a) 
+        var lift = function(m) {
+            var me = this;
+            
+            return sup.bind.call(me, m, function(a) {
+                return sup.unit.call(me, ['just', a]);
+            })
+        };
+        
+        // lift the side effects
+        base.liftSideEffects.call(cls, lift);
+        
+        // prepare for future side effects lifting 
+        cls.liftSideEffects = function(lift) {
+        	var me = this;
+        	
+            base.liftSideEffects.call(this, lift);
+            
+            (function() {
+                var sup = me.prototype.fail;
+                me.prototype.fail = function() { 
+                    return lift.call(this, sup.apply(this, arguments));
+                };
+            })();
+        };
+    })();
+    
+    return cls;    
+};
 
+
+/*
 jawa.monad.ErrT = function(base) {
     var monad = {};
 
@@ -41,4 +104,5 @@ jawa.monad.ErrT = function(base) {
     
     return monad;
 };
+*/
 

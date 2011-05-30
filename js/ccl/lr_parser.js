@@ -1,8 +1,5 @@
 
-jawa.namespace(jawa, 'ccl');
-
-// jawa.ccl.Parser = newClass({template: function(cls) {
-jawa.ccl.Parser = function() {
+ccl.Parser = function() {
 
 var parse = function(input) {
 

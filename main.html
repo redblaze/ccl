@@ -1,12 +1,51 @@
-
 <html>
-  <!-- <script src="js/monad/monad.js"></script> -->
-  <body>
-    <textarea cols="80" rows="40" id="source"></textarea>
-    <input id="compile" type="button" value="compile">
-    <input id="run" type="button" value="run">
-    <textarea cols="80" rows="40" id="result"></textarea>
-  </body>
+  <!-- must have -->
+  <script src="js/util/util.js"></script>
+  <script src="js/monad/monad.js"></script>
+  <script src="js/monad/cps.js"></script>
+  <script src="js/util/shortcut.js"></script>
   
-  <script src="main.js"></script>
+  <!-- monad libs -->
+  <script src="js/monad/id_monad.js"></script>    
+  <script src="js/monad/list_monad.js"></script>
+  <script src="js/monad/err_monad_t.js"></script>
+  <script src="js/monad/state_monad_t.js"></script>
+  <script src="js/monad/env_monad_t.js"></script>
+  <script src="js/monad/cont_monad_t.js"></script>
+  <script src="js/monad/id_state_cont_err_env_monad.js"></script>
+  
+  <!-- ccl libs -->
+  <script src="js/ccl/ccl.js"></script>
+  <script src="js/ccl/lr_parser.js"></script>
+  <script src="js/ccl/pretty_print.js"></script>
+  <script src="js/ccl/primitives.js"></script>
+  <script src="js/ccl/interpreter.js"></script>
+
+  <body>
+    <table>
+      <tr>
+        <td>
+          <textarea cols="80" rows="40" id="source"></textarea>
+        </td>
+        <td>
+          <form>
+            <input id="parse" type="button" value="parse >>">
+            <br/>
+            <br/>
+            <input id="pretty_print" type="button" value="pretty print <<">
+            <br/>
+            <br/>
+            <input id="run" type="button" value="run >>">
+            <br/>
+            <br/>
+          </form>
+        </td>
+        <td>
+          <textarea cols="80" rows="40" id="result"></textarea>
+        </td>
+      </tr>
+    </table>
+  </body>
+  <script src="main.js">
+  </script>
 </html>

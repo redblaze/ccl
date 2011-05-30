@@ -1,4 +1,50 @@
 
+var Monad = function() {
+    var cls = function(){
+    };
+    
+    cls.prototype = {
+        // map :: (a -> b) -> (M a -> M b)
+        map: function(f, m) {
+            var me = this;
+            return me.bind(m, function(a) {
+                return me.unit(f(a));
+            });
+        },
+        
+        // join:: M (M a) -> M a
+        join: function(mm) {
+            var me = this;
+            
+            return me.bind(mm, function(m) {
+                return m;
+            });
+        },
+        
+        // sequence:: [M a] -> M [a]
+        sequence: function(ms) {
+            var me = this;
+            
+            var inner = function(i) {
+                if (i < ms.length) {
+                    return me.bind(ms[i], function(a) {
+                        return me.bind(inner(i+1), function(rest) {
+                           return me.unit([a].concat(rest)); 
+                        });
+                    });
+                } else {
+                    return me.unit([])
+                }
+            };
+            
+            return inner(0);
+        }        
+    };
+    
+    return cls;
+}();
+
+/*
 jawa.namespace(jawa, 'monad');
 
 jawa.monad.common = function(monad) {
@@ -60,3 +106,4 @@ jawa.monad.compose = function() {
 	var monad = _compose(ts, m);
 	return monad;
 };
+*/
