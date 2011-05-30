@@ -37,6 +37,8 @@ ccl.Interpreter = function() {
                 return this.interpOr(expr[1]);
             case 'por':
                 return this.interpPor(expr[1]);
+            case 'pand':
+                return this.interpPand(expr[1]);
             case 'seq':
                 return this.interpSeq(expr[1]);
             case 'fun_app':
@@ -107,7 +109,18 @@ ccl.Interpreter = function() {
             for(var i = 0; i < cases.length; i++) {
                 ms.push(me.interpExpr(cases[i]));
             }
-            return fold(monad.por, ms);
+            return fold(ms, monad.por);
+        },
+
+        interpPand: function(cases) {
+            var me = this;
+            var monad = this.monad;
+
+            var ms = [];
+            for(var i = 0; i < cases.length; i++) {
+                ms.push(me.interpExpr(cases[i]));
+            }
+            return fold(ms, monad.pand);
         },
 
         interpSeq: function(items) {
@@ -245,6 +258,10 @@ ccl.Interpreter = function() {
                 case 'por':
                     return monad.bind(monad.sequence(_map(expr[1])), function(es) {
                         return monad.unit(['por', es]);
+                    });
+                case 'pand':
+                    return monad.bind(monad.sequence(_map(expr[1])), function(es) {
+                        return monad.unit(['pand', es]);
                     });
                 case 'seq':
                     return monad.bind(monad.sequence(_map(expr[1])), function(es) {

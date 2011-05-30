@@ -45,6 +45,7 @@ ccl.PrettyPrint = function() {
 		case 'jpath': return ppJPath(expr[1], expr[2]);
 		case 'or':  return ppOr(expr[1]);
 		case 'por':  return ppPor(expr[1]);
+		case 'pand':  return ppPand(expr[1]);
 		case 'seq':  return ppSeq(expr[1]);
 		case 'regex':  return ppRegex(expr[1], expr[2]);
 		case 'fun_app': return ppFunApp(expr[1], expr[2]);
@@ -103,18 +104,21 @@ ccl.PrettyPrint = function() {
 	};
 	
     var ppPor = function(es) {
-		out('(');
-		pushIn();
-		for (var i = 0; i < es.length; i++) {
-			outln('(');
-			ppExpr(es[i]);
-			out(')');
-			if (i < es.length - 1) {
-				out(' |||| ');
-			}
-		};
-		popOut();
-		outln(')');
+        for (var i = 0; i < es.length; i++) {
+            if (i > 0) {
+                out(' ||| ');
+            }
+            ppExpr(es[i]);
+        }
+	};
+
+    var ppPand = function(es) {
+        for (var i = 0; i < es.length; i++) {
+            if (i > 0) {
+                out(' &&& ');
+            }
+            ppExpr(es[i]);
+        }
 	};
 
 	var isStmt = function(e) {

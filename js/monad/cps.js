@@ -29,7 +29,7 @@ var cps = function() {
                 return m(function() {
                     var args = Util.toArray(arguments);
                     return tail(function() {
-                        k.apply(this, args)(cont, abort);
+                        return k.apply(this, args)(cont, abort);
                     });
                 }, abort);
             };
@@ -56,7 +56,7 @@ var cps = function() {
         tryCatch: function(m1, m2) {
             return function(cont, abort) {
                 return m1(cont, function(e) {
-                    m2(e)(cont, abort);
+                    return m2(e)(cont, abort);
                 });
             };
         }

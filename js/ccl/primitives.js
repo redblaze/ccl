@@ -233,10 +233,15 @@ ccl.Primitives = function() {
     cls.async = {
         'cps': cps2fun,
 
-        'timeout': toFun( function(time) {
+        'sleep': toFun(function(time) {
+            /*
             return bind(jawa.timer.sleep(time), function() {
                 return unit();
             });
+            */
+            return function(cont, abort) {
+                setTimeout(cont, time);
+            };
         }),
 
         'wait': function(a) {
