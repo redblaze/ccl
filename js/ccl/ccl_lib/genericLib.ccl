@@ -1,0 +1,117 @@
+
+helloWorld = function(f) {
+  "hello world";
+};
+
+fixpoint = function(f) {
+    rec = {};
+    fp = f(rec);
+    rec.self = fp;
+};
+
+lift = function(x) {
+    list("code", list("const", x));
+};
+
+iif = function(b, t, f) {f = f ||| `0; `(
+    switch {
+        ^lift(b) => ^t | 
+        1 => ^f
+    }
+);};
+
+join = function(c) {`(
+    apply(function(){^c});
+)};
+
+or = function(cs) {
+    res = cs[0];
+    i = 1;
+    while (i < cs.length) {
+        res = `(^res ||| ^(cs[i]));
+        i = i + 1;
+    }
+    res;
+};
+
+continue = `(
+    function() {
+        cont = ?continue;
+        function() {cont();};
+    }();
+);
+
+icatch = function(c) {`(
+    ^?itry ||| ^c
+)};
+
+icontinue = `(?continue());
+
+ibreak = `(?break());
+
+ireturn = function(a) {
+    `(?return(^lift(a)));
+};
+
+repeat = function(o, n) {
+    res = list();
+    i = 0;
+    while(i < n) {
+        push(res, o);
+        i = i + 1;
+    }
+    res;
+};
+
+retry = function(c, times, period) {
+    times = times ||| 10;
+    period = period ||| 1000;
+    #iif(times < 1, `(times = 1));
+    cs = repeat(`(timeout(^lift(period)); ^c;), times - 1);
+    dot(cs, "unshift", c);
+    or(cs);
+};
+
+__foreach__ = function(l, v, c) {`(
+  let ?local = {} in (
+    ?local.i = 0;
+    while(?local.i < ^lift(l).length) {
+      ?local.i = ?local.i + 1;
+      setVar(^lift(v), ^lift(l)[?local.i - 1]);
+      ^c;
+    }
+  )
+)};
+
+
+__foreach__ = function(l, v, c) {let ?local = {} in `(
+  ^lift(?local).i = 0;
+  while(^lift(?local).i < ^lift(l).length) {
+    ^lift(?local).i = ^lift(?local).i + 1;
+    setVar(^lift(v), ^lift(l)[^lift(?local).i - 1]);
+    ^c;
+  }
+)};
+
+__objForeach__ = function(o, k, v, c) {
+  __foreach__(o2a(o), "elem", `(
+    setVar(^lift(k), elem.name);
+    setVar(^lift(v), elem.value);
+    ^c;
+  ));
+};
+
+map = function(l, f) {
+  res = list();
+  foreach(l as v) {
+    dot(res, "push", f(v));
+  }
+  res;
+};
+
+optional = function(c) {
+  `(^c ||| (
+    log("optional code skipped");
+    0;
+  ));
+};

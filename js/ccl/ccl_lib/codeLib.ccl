@@ -1,0 +1,62 @@
+
+unCode = function(c) {
+  assert(c[0] == "code");
+  c[1];
+};
+
+seqCode = function(cs) {
+  switch {
+    length(cs) == 1 => cs[0] |
+    1 => list(
+      "code", list(
+        "seq", 
+        map(cs, unCode)
+      )
+    )
+  }
+};
+
+orCode = function(cs) {
+  switch {
+    length(cs) == 1 => cs[0] |
+    1 => list(
+      "code", 
+      list(
+        "or", 
+        map(cs, unCode)
+      )
+    )
+  }
+}; 
+
+porCode = function(cs) {
+  switch {
+    length(cs) == 1 => cs[0] |
+    1 => list(
+      "code", list(
+        "por", 
+        map(cs, unCode)
+      )
+    )
+  }
+}; 
+
+listCode = function(cs) {
+  list(
+    "code", list(
+      "fun_app", 
+      list("lvar", "list"),
+      map(cs, unCode)
+    )
+  );
+};
+
+lambdaCode = function(fargs, bodyCode) {
+  list(
+    "code", list(
+      "lambda", 
+      fargs, 
+      unCode(bodyCode)
+    )
+  );
+};

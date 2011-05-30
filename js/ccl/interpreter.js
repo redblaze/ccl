@@ -658,22 +658,24 @@ ccl.Interpreter = function() {
                                         return cont(['just', a])(r)(k)(fooS);
                                     }, function(e) {
                                         return abort(e)(r)(k)(fooS);
-                                    }
-                                                                 );
+                                    });
+
                                     /*
-                                      var res = monad.async(function() {
-                                      var res = cls.run(expr, s, r)(
-                                      function(a) {
-                                      return monad.async(function() {
-                                      return cont(['just', a])(r)(k)(fooS);
-                                      });
-                                      },
-                                      function(e) {
-                                      return abort(e)(r)(k)(fooS);
-                                      }
-                                      );
-                                      return res;
-                                      }); */
+                                    var res = monad.async(function() {
+                                        var res = cls.run(expr, s, r)(
+                                            function(a) {
+                                                return monad.async(function() {
+                                                    return cont(['just', a])(r)(k)(fooS);
+                                                });
+                                            },
+                                            function(e) {
+                                                return abort(e)(r)(k)(fooS);
+                                            }
+                                        );
+                                        return res;
+                                    }); 
+                                    */
+
                                     return res;
                                 };
                             };
@@ -695,7 +697,7 @@ ccl.Interpreter = function() {
                     return monad.inEnv(r1, interp.interpExpr(prog));
                 });
             });
-            return monad.run(m, s, r);
+            return monad.run(m, r, s);
         },
 
         _run: function(prog, s, r) {
@@ -710,11 +712,12 @@ ccl.Interpreter = function() {
                     });
                 });
             });
-            return cps.bind(monad.run(m, s, r), function(o) {
+            return cps.bind(monad.run(m, r, s), function(o) {
                 return cps.unit(o[0]);
             });
         },
 
+        // need to figure out the environment for calling this
         applyCCLFunction: function(cclFun, args) {
             args = args || [];
             var interp = new cls();
@@ -724,7 +727,7 @@ ccl.Interpreter = function() {
                 "__args__": args
             };
             var prog = parse('apply(__foo__, __args__);');
-            return monad.run(interp.interpExpr(prog), s);
+            return monad.run(interp.interpExpr(prog), {}, s);
         },
 
         _parseAndRun: function(source, s, r, onCCLWait) {
