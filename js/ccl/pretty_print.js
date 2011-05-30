@@ -196,7 +196,6 @@ ccl.PrettyPrint = function() {
 			out(value);
 			out('"');
 		} else {
-			// throw 'bad const in pretty print';
             out('csp(')
             try {
                 out(JSON.stringify(value));
@@ -215,34 +214,16 @@ ccl.PrettyPrint = function() {
   	};
 	
 	var ppCode = function(e) {
-        /*
-		out('`(');
-		pushIn(); outln('');
-		ppExpr(e);
-		popOut(); outln(')');
-        */
-        
         out('`');
         ppExpr(e);
 	};
 
 	var ppEscape = function(e) {
-		out('^(');
-		pushIn();
-		outln('');
-		ppExpr(e);
-		popOut();
-		outln(')');
+        out('^');
+        ppExpr(e);
 	};
 
 	var ppDecode = function(e) {
-        /*
-		out('#(');
-		pushIn(); outln('');
-		ppExpr(e);
-		popOut(); outln(')');
-        */
-        
         out('#');
         ppExpr(e);
 	};

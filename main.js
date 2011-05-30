@@ -7,10 +7,6 @@
         this._ndParse = document.getElementById('parse');
         this._ndPrettyPrint = document.getElementById('pretty_print');
         this._ndRun = document.getElementById('run');
-        
-        
-        // this.monad = new (ErrT(StateT(ListM)))();
-        this.monad = new (ErrT(ListM))();
     };
     
     Main.prototype = {
@@ -41,7 +37,6 @@
             this._ndParse.addEventListener('click', function() {
                 var source = me._getSource();
                 var abst = ccl.Parser.parse(source);
-                console.log(abst);
                 me._setResult(JSON.stringify(abst));
             }, false);
 
