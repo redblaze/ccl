@@ -44,6 +44,12 @@
                 console.log(abst);
                 me._setResult(JSON.stringify(abst));
             }, false);
+
+            this._ndPrettyPrint.addEventListener('click', function() {
+                var res = me._getResult();
+                var source = ccl.PrettyPrint.pp(JSON.parse(res));
+                me._setSource(source);
+            }, false);
         },
         
         _test: function() {
@@ -60,6 +66,14 @@
         
         _getSource: function() {
             return this._ndSource.value;
+        },
+
+        _setSource: function(v) {
+            this._ndSource.value = v;
+        },
+
+        _getResult: function() {
+            return this._ndResult.value;
         },
         
         _setResult: function(v) {

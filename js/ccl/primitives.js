@@ -245,6 +245,10 @@ ccl.Primitives = function() {
         },
         'alert': function(a) {
             alert(a);
+        },
+
+        firebugConsoleLog: function(a) {
+            console.log(a);
         }
     };
 

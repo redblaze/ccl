@@ -47,6 +47,10 @@ var toStmts = function(es) {
         '\$'  Dollar
         '=>'
         ':'
+        'if'  If
+        'else'  Else  
+        'try' Try
+        'catch' Catch
         'switch'  Switch
         'while'  While
         'for'  For
@@ -69,7 +73,7 @@ var toStmts = function(es) {
         ;
         
 >       '='
-        '<-'
+        /~ '<-' ~/
         ;
 
 <       '\|\|\|'
@@ -149,8 +153,8 @@ e:     e '+' e  [* %% = ['fun_app', ['lvar', '+'], [%1, %3]]; *]
        | String  [* %% = ['const', %1]; *]
        | LExp [* %% = %1; *]
        | LExp '=' e  [* %% = ['assign', %1, %3]; *]
-       | LExp '<-' e  [* %% = ['assign_fork', %1, %3]; *]
-       | '<-' e  [* %% = ['fork', %2]; *]
+       /~ | LExp '<-' e  [* %% = ['assign_fork', %1, %3]; *] ~/
+       /~ | '<-' e  [* %% = ['fork', %2]; *] ~/
        /~ | e ';' e [* %% = ['seq', flattern(['seq', [%1, %3]], 'seq')]; *] ~/
        | stmts [* %% = toStmts(%1); *]
        | e '|||' e [* %% = ['or', flattern(['or', [%1, %3]], 'or')]; *]
@@ -183,6 +187,9 @@ stmt:  e ';'  [* %% = %1; *]
        | While '(' e ')' '{' e '}' [* %% = ['while', %3, %6]; *]
        | Foreach '(' e As Identifier ')' '{' e '}' [* %% = ['foreach', %3, %5, %8]; *]
        | Foreach '(' e As Identifier ':' Identifier ')' '{' e '}' [* %% = ['obj_foreach', %3, %5, %7, %10]; *]
+       | If '(' e ')' '{' e '}'  [* %% = ['if', %3, %6] *]
+       | If '(' e ')' '{' e '}' Else '{' e '}'  [* %% = ['if', %3, %6, %10] *]
+       | Try '{' e '}' Catch '(' Identifier ')' '{' e '}'  [* %% = ['try', %3, %7, %10] *] 
        ;
 
 cases:  cases '|' case  [* %% = %1.concat([%3]); *]

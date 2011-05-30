@@ -29,6 +29,7 @@ ccl.PrettyPrint = function() {
 	};
 	
 	var outln = function(s) {
+        s = s || '';
 		res.push('\n');
 		indent();
 		res.push(s);
@@ -37,6 +38,41 @@ ccl.PrettyPrint = function() {
 	var out = function(s) {
 		res.push(s);
 	};
+
+	var _ppExpr = function(expr) {
+	    switch(expr[0]) {
+		case 'lvar':  return ppLVar(expr[1]);
+		case 'jpath': return ppJPath(expr[1], expr[2]);
+		case 'or':  return ppOr(expr[1]);
+		case 'por':  return ppPor(expr[1]);
+		case 'seq':  return ppSeq(expr[1]);
+		case 'regex':  return ppRegex(expr[1], expr[2]);
+		case 'fun_app': return ppFunApp(expr[1], expr[2]);
+		case 'const':  return ppConst(expr[1]);
+		case 'assign':  return ppAsgn(expr[1], expr[2]);
+		case 'code': return ppCode(expr[1]);
+		case 'escape': return ppEscape(expr[1]);
+		case 'decode': return ppDecode(expr[1]);
+		case 'switch': return ppSwitch(expr[1]);
+		case 'while': return ppWhile(expr[1], expr[2]);
+		case 'foreach': return ppForeach(expr[1], expr[2], expr[3]);
+		case 'obj_foreach': return ppObjForeach(expr[1], expr[2], expr[3], expr[4]);
+		case 'obj': return ppObj(expr[1]);
+		case 'lift': return ppLift(expr[1]);
+		case 'lambda':  return ppLambda(expr[1], expr[2]);
+		case 'sub': return ppSub(expr[1], expr[2]);
+		case 'dot': return ppDot(expr[1], expr[2]);
+		case 'land': return ppLand(expr[1], expr[2]);
+		case 'lor': return ppLor(expr[1], expr[2]);
+		case 'paren': return ppParen(expr[1]);
+		case 'let': return ppLet(expr[1], expr[2], expr[3]);
+		case 'imp_var': return ppImpVar(expr[1]);
+        case 'if': return ppIf(expr[1], expr[2], expr[3]);
+        case 'try': return ppTry(expr[1], expr[2], expr[3]);
+      	default: throw 'unrecognized statement in pp: ' + expr;
+		}
+	};
+	
 	
 	var ppLVar = function(name) {
 		out(name);
@@ -103,13 +139,26 @@ ccl.PrettyPrint = function() {
 	};
 	
 	var binOperators = ['==', '!=', '>=', '<=', '+', '-', '*', '/', '~', '#', '=', '<', '>'];
+    
+    var isValidOperator = function(s) {
+        var res = false;
+        
+        for(var i = 0; i < binOperators.length; i++) {
+            if (binOperators[i] == s) {
+                return true;
+            }
+        }
+        
+        return res;
+    };
 	
 	var ppFunApp = function(fun, params) {
 		var funName = null;
 		if (fun[0] == 'lvar') {
 			funName = fun[1];
 		} 
-		if (funName != null && $a.contains(binOperators, funName)) {
+
+		if (funName != null && isValidOperator(funName)) {
 			// out('(');
 			ppExpr(params[0]);
 			out(' ');
@@ -131,9 +180,9 @@ ccl.PrettyPrint = function() {
 	};
 	
 	var ppConst = function(value) {
-		if (YAHOO.lang.isNumber(value)) {
+		if (typeof value === 'number') {
 			out(value);
-		} else if (YAHOO.lang.isString(value)) {
+		} else if (typeof value === 'string') {
 			out('"');
 			out(value);
 			out('"');
@@ -141,7 +190,7 @@ ccl.PrettyPrint = function() {
 			// throw 'bad const in pretty print';
             out('csp(')
             try {
-                out(jawa.json.encode(value));
+                out(JSON.stringify(value));
             } catch(e) {
                 out("unserialzable value");
             }
@@ -157,12 +206,15 @@ ccl.PrettyPrint = function() {
   	};
 	
 	var ppCode = function(e) {
+        /*
 		out('`(');
-		pushIn();
-		outln('');
+		pushIn(); outln('');
 		ppExpr(e);
-		popOut();
-		outln(')');
+		popOut(); outln(')');
+        */
+        
+        out('`');
+        ppExpr(e);
 	};
 
 	var ppEscape = function(e) {
@@ -175,12 +227,15 @@ ccl.PrettyPrint = function() {
 	};
 
 	var ppDecode = function(e) {
+        /*
 		out('#(');
-		pushIn();
-		outln('');
+		pushIn(); outln('');
 		ppExpr(e);
-		popOut();
-		outln(')');
+		popOut(); outln(')');
+        */
+        
+        out('#');
+        ppExpr(e);
 	};
 
 	var ppSwitch = function(cases) {
@@ -327,39 +382,35 @@ ccl.PrettyPrint = function() {
         out(' in ');
         ppExpr(e2);
     };
-	
-	var _ppExpr = function(expr) {
-	    switch(expr[0]) {
-		case 'lvar':  return ppLVar(expr[1]);
-		case 'jpath': return ppJPath(expr[1], expr[2]);
-		case 'or':  return ppOr(expr[1]);
-		case 'por':  return ppPor(expr[1]);
-		case 'seq':  return ppSeq(expr[1]);
-		case 'regex':  return ppRegex(expr[1], expr[2]);
-		case 'fun_app': return ppFunApp(expr[1], expr[2]);
-		case 'const':  return ppConst(expr[1]);
-		case 'assign':  return ppAsgn(expr[1], expr[2]);
-		case 'assign_fork':  return ppAsgn(expr[1], expr[2], '<-');
-		case 'code': return ppCode(expr[1]);
-		case 'escape': return ppEscape(expr[1]);
-		case 'decode': return ppDecode(expr[1]);
-		case 'switch': return ppSwitch(expr[1]);
-		case 'while': return ppWhile(expr[1], expr[2]);
-		case 'foreach': return ppForeach(expr[1], expr[2], expr[3]);
-		case 'obj_foreach': return ppObjForeach(expr[1], expr[2], expr[3], expr[4]);
-		case 'obj': return ppObj(expr[1]);
-		case 'lift': return ppLift(expr[1]);
-		case 'lambda':  return ppLambda(expr[1], expr[2]);
-		case 'sub': return ppSub(expr[1], expr[2]);
-		case 'dot': return ppDot(expr[1], expr[2]);
-		case 'land': return ppLand(expr[1], expr[2]);
-		case 'lor': return ppLor(expr[1], expr[2]);
-		case 'paren': return ppParen(expr[1]);
-		case 'let': return ppLet(expr[1], expr[2], expr[3]);
-		case 'imp_var': return ppImpVar(expr[1]);
-      	default: throw 'unrecognized statement in pp: ' + expr[0];
-		}
-	};
+
+    var ppIf = function(cond, e1, e2) {
+        out('if (');
+        ppExpr(cond);
+        out(') {');
+        pushIn(); outln();
+        ppExpr(e1);
+        popOut(); outln('');
+        out('}');
+        if (e2) {
+            out(' else {');
+            pushIn(); outln();
+            ppExpr(e2);
+            popOut(); outln('');
+            out('}');
+        }
+    };
+
+    var ppTry = function(e1, lvar, e2) {
+        out('try {');
+        pushIn(); outln();
+        ppExpr(e1);
+        popOut(); outln();
+        out('} catch('); out(lvar); out(') {');
+        pushIn(); outln();
+        ppExpr(e2);
+        popOut(); outln();
+        out('}');
+    };
 	
 	var ppExpr = function(expr) {
 		inCtxt(expr[0], function() {

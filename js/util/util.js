@@ -67,15 +67,6 @@ var Util = (function(){
         }
         return res;
     };
-    
-    var printStack = function() {
-        try {
-            var foo = null;
-            var bar = foo.bar;
-        } catch(e) {
-            console.log(e);
-        }
-    };
 
     return {
         extend: extend,

@@ -45,8 +45,6 @@ ccl.Interpreter = function() {
                 return this.interpConst(expr[1]);
             case 'assign':
                 return this.interpAsgn(expr[1], expr[2]);
-            case 'assign_fork':
-                return this.interpAsgn(expr[1], ['fork', expr[2]]);
             case 'code':
                 return this.interpCode(expr[1]);
             case 'escape':
@@ -79,6 +77,10 @@ ccl.Interpreter = function() {
                 return this.interpLet(expr[1], expr[2], expr[3]);
             case 'imp_var':
                 return this.interpImpVar(expr[1]);
+            case 'if':
+                return this.interpIf(expr[1], expr[2], expr[3]);
+            case 'try':
+                return this.interpTry(expr[1], expr[2], expr[3]);
             default:
                 return this.monad.fail('unrecognized statement in interpExpr: ' + pp(expr));
             }
@@ -252,20 +254,10 @@ ccl.Interpreter = function() {
                             return monad.unit(['fun_app', e1, e2s]);
                         });
                     });
-                case 'fork':
-                    return monad.bind(_rec(expr[1], level), function(e) {
-                        return monad.unit(['fork', e]);
-                    });
                 case 'assign':
                     return monad.bind(_rec(expr[1], level), function(e1) {
                         return monad.bind(_rec(expr[2], level), function(e2) {
                             return monad.unit(['assign', e1, e2]);
-                        });
-                    });
-                case 'assign_fork':
-                    return monad.bind(_rec(expr[1], level), function(e1) {
-                        return monad.bind(_rec(expr[2], level), function(e2) {
-                            return monad.unit(['assign_fork', e1, e2]);
                         });
                     });
                 case 'switch':
@@ -352,6 +344,24 @@ ccl.Interpreter = function() {
                     return monad.bind(_rec(expr[2], level), function(e2) {
                         return monad.bind(_rec(expr[3], level), function(e3) {
                             return monad.unit(['let', expr[1], e2, e3]);
+                        });
+                    });
+                case 'if':
+                    return monad.bind(_rec(expr[1], level), function(e1) {
+                        return monad.bind(_rec(expr[2], level), function(e2) {
+                            if (expr[3]) {
+                                return monad.bind(_rec(expr[3], level), function(e3) {
+                                    return monad.unit(['if', e1, e2, e3]);
+                                });
+                            } else {
+                                return monad.unit(['if', e1, e2]);
+                            }
+                        });
+                    })
+                case 'try':
+                    return monad.bind(_rec(expr[1], level), function(e1) {
+                        return monad.bind(_rec(expr[3], level), function(e2) {
+                            return monad.unit(['try', e1, expr[2], e2]);
                         });
                     });
                 default:
@@ -517,6 +527,36 @@ ccl.Interpreter = function() {
             });
         },
 
+        interpIf: function(cond, trueBranch, falseBranch) {
+            var me = this;
+            var monad = this.monad;
+
+            return monad.bind(me.interpExpr(cond), function(a) {
+                if (a) {
+                    return me.interpExpr(trueBranch);
+                } else {
+                    if (falseBranch) {
+                        return me.interpExpr(falseBranch);
+                    } else {
+                        return monad.unit();
+                    }
+                }
+            });
+        },
+
+        interpTry: function(e1, lvar, e2) {
+            var me = this;
+            var monad = this.monad;
+
+            var m = monad.bind(monad.readVar('__exception__'), function(a) {
+                return monad.writeVar(lvar, a);
+            });
+
+            return monad.or(me.interpExpr(e1), monad.bind(m, function() {
+                return me.interpExpr(e2);
+            }));
+        },
+
         interpFunApp: function(fun, args) {
             var me = this;
             var monad = this.monad;
@@ -541,14 +581,12 @@ ccl.Interpreter = function() {
                     return monad.bind(monad.dumpState(), function(s) {
                         var fn = s[funName];
                         if (fn) {
-                            return monad.bind(monad.callcc( function(cont) {
+                            return monad.callcc( function(cont) {
                                 try {
                                     return (fn.apply(this, vs))(cont, fail);
                                 } catch(e) {
                                     return fail(funName + ' is not a function.');
                                 }
-                            }), function(a) {
-                                return monad.fork(a);
                             });
                         }
                         var fn = ccl.Primitives.async[funName];
@@ -574,10 +612,8 @@ ccl.Interpreter = function() {
                         return fail('"' + pp(fun) + '" is not a function.')
                     }
                     return monad.bind(monad.sequence(ms), function(vs) {
-                        return monad.bind(monad.callcc( function(cont) {
+                        return monad.callcc( function(cont) {
                             return (fn.apply(this, vs))(cont, fail);
-                        }), function(a) {
-                            return monad.fork(a);
                         });
                     });
                 });
