@@ -1,7 +1,7 @@
 
 var StateT = function(base) {
     var cls = function() {
-    }
+    };
     
     var sup = base.prototype;
     
@@ -20,17 +20,35 @@ var StateT = function(base) {
         
         // readVar :: string -> (s -> M (a, s))
         readVar: function(name) {var me = this; return function(s) {
-            return sup.unit.call(me, [s[name], s]);
+            var ref = s[name];
+            var val;
+
+            if (ref != null) {
+                val = ref.value;
+            }
+
+            return sup.unit.call(me, [val, s]);
         };},
         
         // writeVar :: (string , a) -> (s -> M (a, s))
         writeVar: function(name, a) {var me = this; return function(s) {
+            /*
             var _s = {};
+
             for (var k in s) {
                 _s[k] = s[k];
             };
+
             _s[name] = a;
             return sup.unit.call(me, [a, _s]);
+            */
+
+            if (s[name] == null) {
+                s[name] = {};
+            }
+            var ref = s[name];
+            ref.value = a;
+            return sup.unit.call(me, [a, s]);
         };},
         
         // dumpState :: () -> (s -> M (s, s))

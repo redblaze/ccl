@@ -427,22 +427,56 @@ ccl.Interpreter = function() {
             return _interpSwitch(cases, 0);
         },
 
-        interpForeach: function(l, name, e) {
-            var expr = ['decode', [
-                'fun_app', ['lvar', '__foreach__'], [
-                    l, ['const', name], ['code', e]
-                ]
-            ]];
-            return this.interpExpr(expr);
+
+        _localScope: function(expr, scope) {
+            return function(r) {
+                return function(k) {
+                    return function(s) {
+                        var _s = shallowCopy(s);
+                        for (var name in scope) {
+                            _s[name] = {value: scope[name]};
+                        }
+                        var res = cls.run(expr, _s, r)( function(a) {
+                            return k(['just', a])(s);
+                        }, function(e) {
+                            return k(['nothing', e])(s);
+                        });
+                        return res;
+                    };
+                };
+            };
         },
 
+        interpForeach: function(e, valueName, body) {
+            var me = this;
+            var monad = this.monad;
+
+            return monad.bind(me.interpExpr(e), function(l) {
+                var ms = [];
+                for(var i = 0; i < l.length; i++) {
+                    var scope = {};
+                    scope[valueName] = l[i];
+                    ms.push(me._localScope(body, scope));
+                }
+                return monad.sequence(ms);
+            });
+        },
+
+
         interpObjForeach: function(e, keyName, valueName, body) {
-            var expr = ['decode', [
-                'fun_app', ['lvar', '__objForeach__'], [
-                    e, ['const', keyName], ['const', valueName], ['code', body]
-                ]
-            ]];
-            return this.interpExpr(expr);
+            var me = this;
+            var monad = this.monad;
+
+            return monad.bind(me.interpExpr(e), function(l) {
+                var ms = [];
+                for(var i in l) {
+                    var scope = {};
+                    scope[keyName] = i;
+                    scope[valueName] = l[i];
+                    ms.push(me._localScope(body, scope));
+                }
+                return monad.sequence(ms);
+            });
         },
 
         interpObj: function(mappings) {
@@ -614,8 +648,9 @@ ccl.Interpreter = function() {
                 var funName = fun[1];
                 return monad.bind(monad.sequence(ms), function(vs) {
                     return monad.bind(monad.dumpState(), function(s) {
-                        var fn = s[funName];
-                        if (fn) {
+                        var ref = s[funName];
+                        if (ref) {
+                            var fn = ref.value;
                             return monad.callcc( function(cont) {
                                 try {
                                     return (fn.apply(this, vs))(cont, fail);
@@ -664,9 +699,9 @@ ccl.Interpreter = function() {
                     var args = toArray(arguments);
                     s = shallowCopy(s);
                     for (var i = 0; i < fargs.length; i++) {
-                        s[fargs[i]] = args[i];
+                        s[fargs[i]] = {value: args[i]};
                     }
-                    s['__args__'] = args;
+                    s['__args__'] = {value: args};
                     return function(cont, abort) {
                         return function(r) {
                             return function(k) {
